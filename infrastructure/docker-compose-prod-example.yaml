@@ -1,0 +1,31 @@
+version: "3.9"
+
+services:
+  # =========================================
+  # NestJS Production App
+  # =========================================
+  app:
+    # Build production image
+    build:
+      context: ../multi_vendor_e_commerce
+      dockerfile: Dockerfile
+
+    container_name: ecommerce_app
+
+    # Restart automatically on failure
+    restart: unless-stopped
+
+    # Production environment variables
+    env_file:
+      - ../multi_vendor_e_commerce/.env.production
+
+    # Expose backend port
+    ports:
+      - "8000:8000"
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:8000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
