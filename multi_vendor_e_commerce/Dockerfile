@@ -5,7 +5,7 @@
 # Stage 1 → Builder Stage
 # ================================
 
-FROM node:22-alpine AS stage1builder 
+FROM node:22-alpine AS builder 
 
 WORKDIR /app
 
@@ -19,11 +19,14 @@ RUN npm install
 COPY . .
 #Remember that left dot is always for your current machine and righ is for Docker
 
+RUN npx prisma generate
+#Generate Prisma Client Required because generated Prisma client is gitignored
+
 RUN npm run build
 
 
 # ================================
-# Stage 2 → Runner Stage
+# Stage 2 → Production Runner Stage
 # ================================
 
 FROM node:22-alpine AS finalRunner
@@ -38,14 +41,16 @@ RUN npm install --omit=dev
 # typescript, eslint, jest etc.
 
 # Copy compiled application from builder stage
-COPY --from=stage1builder /app/dist ./dist
-COPY --from=stage1builder /app/prisma ./prisma
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
 # Copy prisma schema and migrations
+COPY --from=builder /app/src/generated ./src/generated
+# Copy generated Prisma client because it is gitignored and also it is required for runtime, so we need to copy it from builder stage to final stage
 # useful for migrations and runtime metadata
 
 EXPOSE 8000
 # Start compiled NestJS app
-CMD ["node", "dist/main"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main"]
 
 
 #ENTRYPOINT ["node"]
