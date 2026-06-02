@@ -1,9 +1,9 @@
-import { Body, Controller, Post, UsePipes } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards, UsePipes } from '@nestjs/common';
 
 import { AuthService } from './auth.service';
+import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
 
 import { RegisterUserDto } from './dto/register.dto';
-
 import { CustomAuthValidationPipe } from './pipes/custom-auth-validation.pipe';
 import { LoginUserDto } from '../users/dto/login-user.dto';
 
@@ -18,6 +18,7 @@ export class AuthController {
       message: 'Invalid registration payload',
     }),
   )
+  @UseGuards(ThrottlerGuard)
   @Post('register')
   register(@Body() dto: RegisterUserDto) {
     return this.authService.register(dto);
@@ -28,6 +29,7 @@ export class AuthController {
       message: 'Invalid login payload',
     }),
   )
+  @SkipThrottle()
   @Post('login')
   login(@Body() dto: LoginUserDto) {
     return this.authService.login(dto);
